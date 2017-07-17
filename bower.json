@@ -1,0 +1,25 @@
+{
+  "name": "angular-bro-decorators",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app/app.js",
+  "authors": [],
+  "license": "MIT",
+  "moduleType": [],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "1.6.5",
+    "angular-shim": "2.0.0",
+    "angular-ui-router": "1.0.5"
+  },
+  "devDependencies": {
+    "angular-mocks": "1.6.5"
+  }
+}

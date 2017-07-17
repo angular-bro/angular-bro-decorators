@@ -1,6 +1,7 @@
 import angular from 'angular';
 
-let decoratorsModule = angular.module('decorators', []);
+let decoratorsModule = angular.module('angularBroDecorators', []);
+
 export default decoratorsModule;
 
 let $injector;
@@ -101,8 +102,10 @@ export function injectAs (dep) {
 export function directive (opts) {
     return function decorate (Target) {
         let name = opts.name || getTargetName(Target);
+
         name = name.substring(0,1).toLowerCase() + name.substring(1);
-        function factory(/*...deps*/) {
+
+        function factory (/*...deps*/) {
             let inject = Target.$inject || [];
             let directiveDefinitionObject = {
                 priority: opts.priority,
@@ -112,29 +115,32 @@ export function directive (opts) {
                 restrict: opts.restrict,
                 templateNamespace: opts.templateNamespace,
                 scope: opts.scope,
-                controller: [...inject, function (...deps) {
+                controller: [...inject, function controller (...deps) {
                     return new Target(...deps);
                 }],
                 controllerAs: opts.controllerAs || 'controller',
                 bindToController: opts.bindToController || true,
                 require: opts.require
             };
+
             if (Target.compile) {
-                directiveDefinitionObject.compile = function compile(...args) {
+                directiveDefinitionObject.compile = function compile (...args) {
                     return Target.compile(...args);
                 };
             }
+
             if (Target.link) {
-                directiveDefinitionObject.link = function link(...args) {
+                directiveDefinitionObject.link = function link (...args) {
                     return Target.link(...args);
                 };
             }
+
             return directiveDefinitionObject;
         }
+
         decoratorsModule.directive(name, factory);
     };
 }
-
 
 /**
  * @example
@@ -146,12 +152,13 @@ export function directive (opts) {
  *  export default class MyController {}
  */
 export function register (opts) {
-    return function decorate(target) {
+    return function decorate (target) {
         if(opts.inject) {
             target.$inject = opts.inject;
         }
 
         let name = opts.name || getTargetName(target);
+
         decoratorsModule[opts.type](name, target);
     };
 }
@@ -166,6 +173,7 @@ export function register (opts) {
 export function controller (target) {
     return register({ type: 'controller' })(target);
 }
+
 /**
  * @example
  *  import {filter, inject} from './decorators';
@@ -182,14 +190,20 @@ export function controller (target) {
  *  }
  */
 export function filter (Target) {
-    let name = getTargetName(Target);
+    let name = getTargetName(Target),
+        deps = Target.$inject || [];
+
     name = name.substring(0,1).toLowerCase() + name.substring(1);
-    let deps = Target.$inject || [];
+
     decoratorsModule.filter(name, [...deps, function (/*...deps*/) {
         let instance = new Target();
-        return function (...args) { return instance.filter(...args); };
+
+        return function (...args) {
+            return instance.filter(...args);
+        };
     }]);
 }
+
 /**
  * @example
  *  import {constant} from './decorators';
@@ -202,10 +216,14 @@ export function filter (Target) {
  *  }
  */
 export function constant (Target) {
+    const type = 'constant';
     let name = getTargetName(Target);
+
     name = name.substring(0,1).toLowerCase() + name.substring(1);
-    return register({ type: 'constant', name: name })(new Target());
+
+    return register({ type, name })(new Target());
 }
+
 /**
  * @example
  *  import {value} from './decorators';
@@ -218,8 +236,9 @@ export function constant (Target) {
  *  }
  */
 export function value (Target) {
-    return register({ type: 'value', name: getTargetName(Target) })(new Target());
+    return register({ type: 'value' })(new Target());
 }
+
 /**
  * @example
  *  import {factory} from './decorators';
@@ -230,6 +249,7 @@ export function value (Target) {
 export function factory (target) {
     return register({ type: 'factory' })(target);
 }
+
 /**
  * @example
  *  import {service} from './decorators';
@@ -240,6 +260,7 @@ export function factory (target) {
 export function service (target) {
     return register({ type: 'service' })(target);
 }
+
 /**
  * @example
  *  import {provider} from './decorators';
@@ -278,7 +299,7 @@ export function provider (target) {
  */
 export function state (name, opts) {
     return function decorate (Target) {
-        function factory($stateProvider) {
+        function factory ($stateProvider) {
             let stateDefinitionObject = Object.assign({
                 url: `/${name}`,
                 templateUrl: `${name}/template.html`,
@@ -287,6 +308,7 @@ export function state (name, opts) {
 
             if (typeof Target === 'function') {
                 let inject = Target.$inject || [];
+
                 stateDefinitionObject.controller = [...inject, function (...deps) {
                     return new Target(...deps);
                 }];
@@ -294,6 +316,7 @@ export function state (name, opts) {
 
             $stateProvider.state(name, stateDefinitionObject);
         }
+
         decoratorsModule.config(['$stateProvider', factory]);
     };
 }
@@ -307,6 +330,7 @@ export function state (name, opts) {
  */
 export function config (Target) {
     let deps = Target.$inject || [];
+
     decoratorsModule.config([...deps, function (...deps) {
         new Target(...deps);
     }]);
@@ -321,11 +345,11 @@ export function config (Target) {
  */
 export function run (Target) {
     let deps = Target.$inject || [];
+
     decoratorsModule.run([...deps, function (...deps) {
         new Target(...deps);
     }]);
 }
-
 
 /**
  * Polyfill for IE to return Target.name
@@ -334,6 +358,7 @@ function getTargetName (o) {
     if (o.name) {
         return o.name;
     }
+
     // if IE
     return o.toString().match(/function\s?(.*)\s?\(/)[1];
 }
